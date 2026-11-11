@@ -32,9 +32,12 @@ public final class Models {
             return compact(name != null ? name : item);
         }
 
-        /** A book or potion of a known kind. Its prices are real; its trades, volume and turnover are a floor. */
+        /**
+         * A book or potion of a known kind. Its prices are real; its trades, volume and turnover are a floor. One of
+         * Bagel's own items ({@code elytra[named=amethyst_elytra]}) is not one: the API counts those exactly.
+         */
         public boolean variant() {
-            return item != null && item.indexOf('[') >= 0;
+            return item != null && item.indexOf('[') >= 0 && !item.contains("[named=");
         }
 
         /** The mark before a count or sum that is only a minimum. */
