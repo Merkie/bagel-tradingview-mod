@@ -24,11 +24,20 @@ fabricApi {
     }
 }
 
+repositories {
+    maven { url = 'https://maven.terraformersmc.com/releases/' }
+    maven { url = 'https://maven.nucleoid.xyz/' }
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     implementation "net.fabricmc:fabric-loader:${project.loader_version}"
     // The shipped mod uses Fabric Loader only. Fabric API runs the test harness.
     gametestImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    // Mod Menu is optional: the mod compiles against its API for the settings button, and the tests run with it.
+    clientCompileOnly("com.terraformersmc:modmenu:${project.modmenu_version}") { transitive = false }
+    gametestImplementation("com.terraformersmc:modmenu:${project.modmenu_version}") { transitive = false }
+    gametestRuntimeOnly "eu.pb4:placeholder-api:${project.placeholder_api_version}"
 }
 
 processResources {
