@@ -3,7 +3,7 @@ package com.merkie.bageltv.data;
 import java.util.List;
 import java.util.Map;
 
-/** The API's JSON shapes (docs/api.md). Money is cents, times are Unix seconds, and most numbers can be null. */
+/** The API's JSON shapes. Money is cents, times are Unix seconds, and most numbers can be null. */
 public final class Models {
     private Models() {}
 

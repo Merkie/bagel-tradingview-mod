@@ -24,12 +24,21 @@ fabricApi {
     }
 }
 
+repositories {
+    maven { url = 'https://maven.terraformersmc.com/releases/' }
+    maven { url = 'https://maven.nucleoid.xyz/' }
+}
+
 dependencies {
     minecraft "com.mojang:minecraft:${project.minecraft_version}"
     mappings loom.officialMojangMappings()
     modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
     // The shipped mod uses Fabric Loader only. Fabric API runs the test harness.
     modGametestImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+    // Mod Menu is optional: the mod compiles against its API for the settings button, and the tests run with it.
+    modClientCompileOnly("com.terraformersmc:modmenu:${project.modmenu_version}") { transitive = false }
+    modGametestImplementation("com.terraformersmc:modmenu:${project.modmenu_version}") { transitive = false }
+    modGametestRuntimeOnly "eu.pb4:placeholder-api:${project.placeholder_api_version}"
 }
 
 // Fabric's 1.21.11 test harness can stall world loading on GitHub Actions while it syncs packets
