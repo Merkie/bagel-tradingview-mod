@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "id": "bagel-tradingview-test",
+  "version": "1.0.0",
+  "environment": "client",
+  "entrypoints": {
+    "client": ["com.merkie.bageltv.FakeApi"],
+    "fabric-client-gametest": [
+      "com.merkie.bageltv.HotkeyGameTest",
+      "com.merkie.bageltv.MarketGameTest",
+      "com.merkie.bageltv.ChartGameTest",
+      "com.merkie.bageltv.LayoutGameTest",
+      "com.merkie.bageltv.TablesGameTest",
+      "com.merkie.bageltv.SearchGameTest",
+      "com.merkie.bageltv.DataGameTest",
+      "com.merkie.bageltv.TerminalGameTest",
+      "com.merkie.bageltv.IntroGameTest"
+    ]
+  },
+  "mixins": ["bagel-tradingview.test.mixins.json"]
+}
