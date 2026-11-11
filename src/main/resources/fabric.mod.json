@@ -7,7 +7,10 @@
   "authors": ["Merkie"],
   "license": "All-Rights-Reserved",
   "environment": "client",
-  "entrypoints": { "client": ["com.merkie.bageltv.BagelTV"] },
+  "entrypoints": {
+    "client": ["com.merkie.bageltv.BagelTV"],
+    "modmenu": ["com.merkie.bageltv.ModMenuEntry"]
+  },
   "mixins": ["bagel-tradingview.mixins.json"],
   "depends": {
     "fabricloader": ">=0.19.3",

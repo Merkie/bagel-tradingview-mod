@@ -1,16 +1,19 @@
 package com.merkie.bageltv;
 
+import com.merkie.bageltv.ui.HotkeyScreen;
 import com.merkie.bageltv.ui.TerminalScreen;
+import com.terraformersmc.modmenu.api.ModMenuApi;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.client.gui.screens.ChatScreen;
 import com.mojang.blaze3d.platform.InputConstants;
 
 import static com.merkie.bageltv.Harness.require;
 
 /**
- * The hotkey and the window: B opens and closes the terminal but never from chat, the settings popover rebinds it
- * and turns down keys Minecraft uses, the panel drags by its title bar, and fullscreen and size are remembered.
+ * The hotkey and the window: B opens and closes the terminal but never from chat, the settings popover and Mod Menu's
+ * settings screen rebind it and turn down keys Minecraft uses, the panel drags by its title bar, and fullscreen and size are remembered.
  */
 public final class HotkeyGameTest implements FabricClientGameTest {
     @Override
@@ -91,6 +94,36 @@ public final class HotkeyGameTest implements FabricClientGameTest {
             harness.key(InputConstants.KEY_J);
             context.waitFor(client -> client.gui.screen() == null);
             harness.key(InputConstants.KEY_J);
+            context.waitForScreen(TerminalScreen.class);
+            harness.key(InputConstants.KEY_J);
+            context.waitFor(client -> client.gui.screen() == null);
+
+            // Mod Menu's settings button for the mod opens a screen that rebinds the key without the terminal.
+            context.runOnClient(client -> {
+                var entry = FabricLoader.getInstance().getEntrypointContainers("modmenu", ModMenuApi.class).stream()
+                        .filter(container -> container.getProvider().getMetadata().getId().equals(BagelTV.ID))
+                        .findFirst().orElseThrow(() -> new AssertionError("Mod Menu does not see the mod"));
+                client.gui.setScreen(entry.getEntrypoint().getModConfigScreenFactory().create(null));
+            });
+            context.waitForScreen(HotkeyScreen.class);
+            harness.shot("modmenu-hotkey");
+            // The key button sits just above the middle of the screen.
+            double[] button = context.computeOnClient(client -> new double[] {
+                    client.getWindow().getScreenWidth() / 2.0, client.getWindow().getScreenHeight()
+                            * (client.getWindow().getGuiScaledHeight() / 2.0 - 20) / client.getWindow().getGuiScaledHeight()});
+            context.getInput().setCursorPos(button[0], button[1]);
+            context.waitTick();
+            context.getInput().pressMouse(InputConstants.MOUSE_BUTTON_LEFT);
+            context.waitTick();
+            harness.key(InputConstants.KEY_E);
+            require(BagelTV.config().hotkey == InputConstants.KEY_J, "Mod Menu's screen turns down a key Minecraft uses");
+            harness.shot("modmenu-hotkey-in-use");
+            harness.key(InputConstants.KEY_K);
+            require(BagelTV.config().hotkey == InputConstants.KEY_K && Config.load().hotkey == InputConstants.KEY_K,
+                    "Mod Menu's screen saves the new key");
+            harness.key(InputConstants.KEY_ESCAPE);
+            context.waitFor(client -> client.gui.screen() == null);
+            harness.key(InputConstants.KEY_K);
             context.waitForScreen(TerminalScreen.class);
             context.runOnClient(client -> {
                 BagelTV.config().hotkey = InputConstants.KEY_B;

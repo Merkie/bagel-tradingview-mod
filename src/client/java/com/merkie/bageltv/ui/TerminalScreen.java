@@ -14,7 +14,6 @@ import com.merkie.bageltv.view.PlayersView;
 import com.merkie.bageltv.view.ScreenerView;
 import com.merkie.bageltv.view.View;
 import com.mojang.blaze3d.platform.InputConstants;
-import net.minecraft.client.KeyMapping;
 import net.minecraft.client.gui.GuiGraphicsExtractor;
 import net.minecraft.client.gui.screens.Screen;
 import net.minecraft.client.input.CharacterEvent;
@@ -595,7 +594,7 @@ public final class TerminalScreen extends Screen implements Ui.Nav {
         ui.box(x, y, w, h, Theme.RAISED, Theme.BORDER_STRONG);
         ui.shield(x, y, w, h);
         ui.text("Hotkey", x + 7, y + 10, Theme.MUTED);
-        String key = capturingKey ? "Press a key" : keyName(BagelTV.config().hotkey);
+        String key = capturingKey ? "Press a key" : Hotkey.name();
         int kw = ui.width(key) + 10;
         ui.button(key, x + w - 7 - kw, y + 7, capturingKey, () -> {
             capturingKey = !capturingKey;
@@ -611,10 +610,6 @@ public final class TerminalScreen extends Screen implements Ui.Nav {
                 keyNote.isEmpty() ? Theme.FAINT : Theme.WARN);
     }
 
-    private static String keyName(int code) {
-        return InputConstants.Type.KEYBOARD.getOrCreate(code).getDisplayName().getString();
-    }
-
     /** Takes a key for opening the terminal unless Minecraft already uses it. */
     private void captureKey(int code) {
         if (code == InputConstants.KEY_ESCAPE) {
@@ -623,19 +618,8 @@ public final class TerminalScreen extends Screen implements Ui.Nav {
             return;
         }
         if (code == InputConstants.UNKNOWN.getValue()) return;
-        InputConstants.Key key = InputConstants.Type.KEYBOARD.getOrCreate(code);
-        for (KeyMapping mapping : minecraft.options.keyMappings) {
-            boolean plain = mapping.getCategory() != KeyMapping.Category.DEBUG
-                    || mapping == minecraft.options.keyDebugModifier || mapping == minecraft.options.keyDebugOverlay;
-            if (plain && mapping.matches(key)) {
-                keyNote = "Minecraft already uses " + keyName(code);
-                return;
-            }
-        }
-        BagelTV.config().hotkey = code;
-        BagelTV.config().save();
-        capturingKey = false;
-        keyNote = "";
+        keyNote = Hotkey.bind(code);
+        capturingKey = !keyNote.isEmpty();
     }
 
     // Input
