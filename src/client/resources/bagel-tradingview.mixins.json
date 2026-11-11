@@ -1,0 +1,7 @@
+{
+  "required": true,
+  "package": "com.merkie.bageltv.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": ["KeyboardHandlerMixin"],
+  "injectors": { "defaultRequire": 1 }
+}

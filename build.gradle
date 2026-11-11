@@ -1,0 +1,49 @@
+plugins {
+    id 'net.fabricmc.fabric-loom-remap' version "${loom_version}"
+}
+
+base { archivesName = 'bagel-tradingview' }
+
+loom {
+    splitEnvironmentSourceSets()
+    mods {
+        'bagel-tradingview' {
+            sourceSet sourceSets.main
+            sourceSet sourceSets.client
+        }
+    }
+}
+
+fabricApi {
+    configureTests {
+        createSourceSet = true
+        modId = 'bagel-tradingview-test'
+        enableGameTests = false
+        enableClientGameTests = true
+        eula = true
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${project.minecraft_version}"
+    mappings loom.officialMojangMappings()
+    modImplementation "net.fabricmc:fabric-loader:${project.loader_version}"
+    // The shipped mod uses Fabric Loader only. Fabric API runs the test harness.
+    modGametestImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+}
+
+// Fabric's 1.21.11 test harness can stall world loading on GitHub Actions while it syncs packets
+// between the client and server; Fabric's docs recommend turning that syncing off there.
+tasks.named('runClientGameTest') { jvmArgs '-Dfabric.client.gametest.disableNetworkSynchronizer=true' }
+
+processResources {
+    inputs.property 'version', project.version
+    filesMatching('fabric.mod.json') { expand version: project.version }
+}
+
+tasks.withType(JavaCompile).configureEach { options.release = 21 }
+java {
+    withSourcesJar()
+    sourceCompatibility = JavaVersion.VERSION_21
+    targetCompatibility = JavaVersion.VERSION_21
+}
