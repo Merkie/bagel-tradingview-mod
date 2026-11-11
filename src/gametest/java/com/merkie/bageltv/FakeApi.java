@@ -772,6 +772,8 @@ public final class FakeApi implements ClientModInitializer {
         Random random = new Random(5);
         double money = number(current, "totalMoney", 8e12) * 0.94, escrow = number(current, "orderEscrow", 8e11) * 0.9;
         int points = 7 * 288;
+        Random crowd = new Random(11);
+        double level = 1, wander = 0;
         for (int i = 0; i < points; i++) {
             long t = now - (long) (points - 1 - i) * 300;
             money *= 1 + 0.06 / points + random.nextGaussian() * 0.00012;
@@ -779,8 +781,14 @@ public final class FakeApi implements ClientModInitializer {
             JsonObject point = new JsonObject();
             point.addProperty("t", t);
             point.addProperty("totalMoney", Math.round(money));
-            point.addProperty("online", Math.round(1100 + 500 * Math.sin((t % 86400) / 86400.0 * 2 * Math.PI - 1.2)
-                    + random.nextGaussian() * 25));
+            // A day on a real server: a slow climb to an evening peak and a quick fall overnight, busier at the
+            // weekend, no two days the same height, and a count that wanders rather than jitters.
+            double day = (t % 86400) / 86400.0 * 2 * Math.PI;
+            double shape = Math.sin(day - 1.2) + 0.35 * Math.sin(2 * day + 0.6);
+            boolean weekend = (t / 86400 + 4) % 7 >= 5;
+            level += (1 - level) * 0.004 + crowd.nextGaussian() * 0.004;
+            wander = wander * 0.9 + crowd.nextGaussian() * 9;
+            point.addProperty("online", Math.round((weekend ? 1.14 : 1) * level * (1050 + 430 * shape) + wander));
             point.addProperty("players", 219000 + i / 3);
             point.addProperty("openOrders", 1600 + (int) (80 * Math.sin(i / 90.0)) + random.nextInt(12));
             point.addProperty("orderEscrow", Math.round(escrow));
