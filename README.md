@@ -9,6 +9,9 @@ player is really worth.
 It is mostly a good-looking toy, but the numbers are real: you can watch auction house sales as they happen, see
 which buy orders are worth filling, and look up a player's balance with the money they have locked in orders.
 
+It is client-only and just reads a public API that has recorded BagelSMP's auction house, buy orders and
+balances since November 10, 2026.
+
 ## Download
 
 Get the jar for your Minecraft version from the
@@ -27,21 +30,6 @@ Fabric API, no other mods.
 To change the key, click the gear in the terminal's title bar. If B is already taken and you cannot open the
 terminal at all, install [Mod Menu](https://modrinth.com/mod/modmenu) and change it from the mod's settings
 there, or edit `hotkey` in `config/bagel-tradingview.json`.
-
-## Is it safe?
-
-All of the mod's code is in this repository, and the jars on the releases page are built from it. What it does:
-
-- It runs on your computer only. It sends nothing to the Minecraft server: no chat, no commands, no packets. It
-  does not click, move or trade for you.
-- It reads market data from a public, read-only API at `https://bageltv.archers.tools`, and player heads from
-  BagelSMP's own skin service. Those are the only two places it connects to, and it sends neither your name nor
-  anything about your account.
-- It writes two files in your game's `config` folder: `bagel-tradingview.json` (key, window, chart choices) and
-  `bagel-tradingview-drawings.json` (what you drew on charts).
-
-The API records BagelSMP's auction house, buy orders and balances over time. Its history starts on
-November 10, 2026, so longer windows fill in as time passes.
 
 ## What is in it
 
