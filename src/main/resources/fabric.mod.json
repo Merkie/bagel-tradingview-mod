@@ -1,0 +1,17 @@
+{
+  "schemaVersion": 1,
+  "id": "bagel-tradingview",
+  "version": "${version}",
+  "name": "BagelTradingView",
+  "description": "A market terminal for the BagelSMP economy: charts, a screener, buy orders and players.",
+  "authors": ["Merkie"],
+  "license": "All-Rights-Reserved",
+  "environment": "client",
+  "entrypoints": { "client": ["com.merkie.bageltv.BagelTV"] },
+  "mixins": ["bagel-tradingview.mixins.json"],
+  "depends": {
+    "fabricloader": ">=0.19.3",
+    "minecraft": "26.1.2",
+    "java": ">=25"
+  }
+}
