@@ -227,6 +227,31 @@ public final class Models {
         public List<PlayerRow> players;
     }
 
+    /** Billford's trades, newest first. The first is the one he offers now when its {@code to} is null. */
+    public static final class Billford {
+        public Long checkedAt;
+        public List<BillfordTrade> trades;
+    }
+
+    /** One trade: what the player gives and gets, and each side's total at /sell worth and at auction sales. */
+    public static final class BillfordTrade {
+        public long id, from;
+        public Long to, lastSeen;
+        public List<BillfordItem> give, get;
+        public Double giveWorth, getWorth, worthRatio, giveAh, getAh, ahRatio;
+    }
+
+    public static final class BillfordItem {
+        public String item, base, name;
+        public double qty;
+        /** Per unit, when the trade was last seen. */
+        public Double worth, ah;
+
+        public String label() {
+            return compact(name != null ? name : item);
+        }
+    }
+
     public static final class PlayersHistory {
         public String window;
         public List<PlayerSeries> series;

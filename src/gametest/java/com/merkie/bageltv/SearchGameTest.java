@@ -54,7 +54,7 @@ public final class SearchGameTest implements FabricClientGameTest {
             require(TerminalScreen.route().equals(first), "Alt+Left goes back too");
 
             // Recent lists both in the rail: the item on top now, the player under it.
-            harness.click(bounds[0] + 30, bounds[1] + 17 + 3 + 5 * 15 + 4 + 6 + 11 + 13 + 6);
+            harness.click(bounds[0] + 30, bounds[1] + 17 + 3 + 6 * 15 + 4 + 6 + 11 + 13 + 6);
             harness.settle();
             require(TerminalScreen.route().equals(Route.player("Simpinhoe")), "Recent reopens the player: "
                     + TerminalScreen.route());

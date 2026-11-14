@@ -14,6 +14,7 @@ public enum Icon {
     ORDERS("XXXXXXX", "X.....X", "X.XXX.X", "X.....X", "X.XXX.X", "X.....X", "XXXXXXX"),
     PLAYERS("..XXX..", "..XXX..", "..XXX..", ".......", ".XXXXX.", "XXXXXXX", "XXXXXXX"),
     ECONOMY("..XXX..", ".X.X.X.", ".X.X...", "..XXX..", "...X.X.", ".X.X.X.", "..XXX.."),
+    BILLFORD("..X....", ".XXXXXX", "..X....", ".......", "....X..", "XXXXXX.", "....X.."),
     ITEM("...X...", "..XXX..", ".XXXXX.", "XXXXXXX", ".XXXXX.", "..XXX..", "...X..."),
     PLAYER("..XXX..", ".XXXXX.", ".XXXXX.", "..XXX..", ".......", ".XXXXX.", "XXXXXXX"),
     CURSOR("X......", "XX.....", "XXX....", "XXXX...", "XXXXX..", "XX.X...", "....X.."),
