@@ -23,6 +23,7 @@ public final class TerminalGameTest implements FabricClientGameTest {
                 shot(harness, Route.of(Route.Kind.PLAYERS), "players" + suffix);
                 shot(harness, Route.player("Simpinhoe"), "player" + suffix);
                 shot(harness, Route.of(Route.Kind.ECONOMY), "economy" + suffix);
+                shot(harness, Route.of(Route.Kind.BILLFORD), "billford" + suffix);
             }
             context.getInput().resizeWindow(854, 480);
             context.waitTicks(5);

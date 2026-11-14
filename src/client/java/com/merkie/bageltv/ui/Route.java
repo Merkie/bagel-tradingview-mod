@@ -4,7 +4,8 @@ package com.merkie.bageltv.ui;
 public record Route(Kind kind, String arg) {
     public enum Kind {
         MARKET("Market", Icon.MARKET), SCREENER("Screener", Icon.SCREENER), ORDERS("Orders", Icon.ORDERS),
-        PLAYERS("Players", Icon.PLAYERS), ECONOMY("Economy", Icon.ECONOMY), ITEM("Item", Icon.ITEM),
+        PLAYERS("Players", Icon.PLAYERS), ECONOMY("Economy", Icon.ECONOMY), BILLFORD("Billford", Icon.BILLFORD),
+        ITEM("Item", Icon.ITEM),
         PLAYER("Player", Icon.PLAYER);
 
         public final String label;

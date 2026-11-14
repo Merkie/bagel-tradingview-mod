@@ -14,6 +14,7 @@
       "com.merkie.bageltv.SearchGameTest",
       "com.merkie.bageltv.DataGameTest",
       "com.merkie.bageltv.TerminalGameTest",
+      "com.merkie.bageltv.BillfordGameTest",
       "com.merkie.bageltv.IntroGameTest"
     ]
   },
