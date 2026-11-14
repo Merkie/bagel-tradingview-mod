@@ -172,6 +172,7 @@ public final class FakeApi implements ClientModInitializer {
         if (path.equals("/v1/items")) return items(query, dense);
         if (path.equals("/v1/orders")) return orders(query, dense);
         if (path.equals("/v1/orders/fills")) return fixture("fills");
+        if (path.equals("/v1/billford")) return billford(dense);
         if (path.equals("/v1/players")) return players(query, dense);
         if (path.equals("/v1/players/search")) return search(query.getOrDefault("q", ""));
         if (path.equals("/v1/players/history")) return dense ? densePlayersHistory() : fixture("players_history");
@@ -863,6 +864,84 @@ public final class FakeApi implements ClientModInitializer {
         answer.addProperty("sweptAt", now() - 140);
         answer.add("orders", page);
         return answer;
+    }
+
+    // Billford
+
+    /** Each trade as "qty item worth ah" on both sides of ">", with "+" between items and "-" for no price. */
+    private static final String[] BILLFORD = {
+        "1 oak_log 1600 23829 > 1 redstone 5000 22874",
+        "16 cobblestone 100 310 > 1 diamond 20000 41250",
+        "4 iron_ingot 2500 9800 > 1 ender_pearl 1000 7200",
+        "1 emerald 15000 38000 > 32 wheat 300 640",
+        "8 gunpowder 1200 5100 + 2 bone 500 - > 1 enchanted_book[mending=1] 20000 -",
+        "1 gold_ingot 6000 14100 > 3 coal 800 4700",
+        "64 obsidian 2000 9900 > 1 quartz 1500 6000",
+        "2 slime_ball 2500 12000 > 5 lapis_lazuli 1800 5300",
+    };
+
+    /** In the busy market, three weeks of trades of 12 to 24 hours each; otherwise the one he offers now. */
+    private static JsonObject billford(boolean dense) {
+        Random random = new Random(11);
+        JsonArray trades = new JsonArray();
+        long from = now() - 2 * 3600 - 300, to = 0;
+        for (int i = 0; i < (dense ? 30 : 1); i++) {
+            JsonObject trade = new JsonObject();
+            trade.addProperty("id", 30 - i);
+            trade.addProperty("from", from);
+            if (i > 0) trade.addProperty("to", to);
+            trade.addProperty("lastSeen", i > 0 ? to - 200 : now() - 140);
+            String[] sides = BILLFORD[i % BILLFORD.length].split(" > ");
+            String[] names = {"give", "get"};
+            double[][] totals = new double[2][2];
+            for (int s = 0; s < 2; s++) {
+                JsonArray items = new JsonArray();
+                for (String spec : sides[s].split(" \\+ ")) {
+                    String[] part = spec.split(" ");
+                    JsonObject item = new JsonObject();
+                    String base = part[1].split("\\[")[0];
+                    item.addProperty("item", part[1]);
+                    item.addProperty("base", base);
+                    item.addProperty("name", part[1].equals(base) ? title(base) : "Enchanted Book (Mending 1)");
+                    double qty = Double.parseDouble(part[0]);
+                    item.addProperty("qty", qty);
+                    for (int p = 0; p < 2; p++) {
+                        if (part[2 + p].equals("-")) totals[s][p] = Double.NaN;
+                        else {
+                            // Prices drift from one sighting of a pair to the next.
+                            double price = round(Double.parseDouble(part[2 + p]) * (p == 0 || i < 8 ? 1
+                                    : 0.6 + random.nextDouble()));
+                            item.addProperty(p == 0 ? "worth" : "ah", price);
+                            totals[s][p] += price * qty;
+                        }
+                    }
+                    items.add(item);
+                }
+                trade.add(names[s], items);
+            }
+            for (int p = 0; p < 2; p++) {
+                String kind = p == 0 ? "Worth" : "Ah";
+                if (Double.isNaN(totals[0][p]) || Double.isNaN(totals[1][p])) continue;
+                trade.addProperty("give" + kind, totals[0][p]);
+                trade.addProperty("get" + kind, totals[1][p]);
+                trade.addProperty(p == 0 ? "worthRatio" : "ahRatio", Math.round(totals[1][p] / totals[0][p] * 1000) / 1000.0);
+            }
+            trades.add(trade);
+            to = from;
+            from -= 12 * 3600 + random.nextInt(12 * 3600);
+        }
+        JsonObject answer = new JsonObject();
+        answer.addProperty("checkedAt", now() - 140);
+        answer.add("trades", trades);
+        return answer;
+    }
+
+    private static String title(String key) {
+        StringBuilder words = new StringBuilder();
+        for (String word : key.split("_")) {
+            words.append(words.isEmpty() ? "" : " ").append(Character.toUpperCase(word.charAt(0))).append(word.substring(1));
+        }
+        return words.toString();
     }
 
     // Players
