@@ -38,6 +38,7 @@ there, or edit `hotkey` in `config/bagel-tradingview.json`.
 | ![Market](docs/images/market.png) | ![Item](docs/images/item.png) |
 | ![Screener](docs/images/screener.png) | ![Orders](docs/images/orders.png) |
 | ![Player](docs/images/player.png) | ![Economy](docs/images/economy.png) |
+| ![Billford](docs/images/billford.png) | |
 
 The screenshots come from the mod's tests, which run against a made-up market.
 
@@ -52,6 +53,8 @@ The screenshots come from the mod's tests, which run against a made-up market.
 - **Players**: the rich list, and one player's balance over time, their orders, what those paid out, and their
   auction activity.
 - **Economy**: money supply, players online, money in buy orders.
+- **Billford**: the trade `/billford` offers now and every trade he has offered since, each rated by what the two
+  sides are worth to `/sell` and by what they sell for on the auction house.
 
 Every chart works the same way: wheel to zoom, drag to pan, Shift-drag or right-drag to zoom to a box, drag the
 price axis to stretch it, double click to fit, log scale, maximize, and drawing tools behind the pencil. Drawings

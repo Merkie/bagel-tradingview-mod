@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Refreshes the README's images (docs/images/) from the screenshots the client game tests take: the six views at
+# Refreshes the README's images (docs/images/) from the screenshots the client game tests take: the seven views at
 # 1920 x 1080 and the startup animation as a GIF. Run ./gradlew runClientGameTest first.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 shots=build/run/clientGameTest/screenshots
 out=docs/images
 mkdir -p "$out"
-for view in market item screener orders player economy; do
+for view in market item screener orders player economy billford; do
   cp "$shots"/*_"$view"-1080.png "$out/$view.png"
 done
 tmp=$(mktemp -d)

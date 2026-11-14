@@ -5,6 +5,7 @@ import com.merkie.bageltv.Config;
 import com.merkie.bageltv.Fmt;
 import com.merkie.bageltv.data.Api;
 import com.merkie.bageltv.data.Models;
+import com.merkie.bageltv.view.BillfordView;
 import com.merkie.bageltv.view.EconomyView;
 import com.merkie.bageltv.view.ItemView;
 import com.merkie.bageltv.view.MarketView;
@@ -254,6 +255,7 @@ public final class TerminalScreen extends Screen implements Ui.Nav {
             case ORDERS -> new OrdersView();
             case PLAYERS -> new PlayersView();
             case ECONOMY -> new EconomyView();
+            case BILLFORD -> new BillfordView();
             case ITEM -> new ItemView(route.arg());
             case PLAYER -> new PlayerView(route.arg());
         };
@@ -469,7 +471,7 @@ public final class TerminalScreen extends Screen implements Ui.Nav {
     private void rail(int x, int y, int w, int h) {
         int ry = y + 3;
         Route.Kind[] kinds = {Route.Kind.MARKET, Route.Kind.SCREENER, Route.Kind.ORDERS, Route.Kind.PLAYERS,
-                Route.Kind.ECONOMY};
+                Route.Kind.ECONOMY, Route.Kind.BILLFORD};
         for (Route.Kind kind : kinds) {
             boolean on = route.kind() == kind;
             boolean over = ui.click(x, ry, w, 15, () -> go(Route.of(kind)));
