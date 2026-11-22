@@ -21,7 +21,7 @@ import java.util.function.Consumer;
  * tool) zooms both axes to a box, dragging the value axis stretches it, and a double click fits everything again.
  * Every chart has the same header: what it shows, the view's own controls, then cursor, box zoom, the drawing
  * tools behind the pencil, log scale, reset and maximize. Drawings live in data space, so they stay on their
- * candles, can be selected, moved and reshaped, and are saved per chart key.
+ * candles, can be selected, moved and reshaped, and last until the player leaves the page.
  */
 public final class Chart implements Interactive {
     public enum Tool {
@@ -81,7 +81,7 @@ public final class Chart implements Interactive {
     /** What the chart shows, written in its header, or at the start of the legend when the header is full. */
     public String title = "";
     public String emptyText = "No data yet";
-    /** Where its drawings are saved. */
+    /** What its drawings are kept under. */
     public String key;
     /** Drawn under the header instead of the plot, or null for the chart itself. */
     public Body body;
@@ -273,10 +273,9 @@ public final class Chart implements Interactive {
         if (maximized == this) {
             ui.box(x, y, w, h, Theme.BG, Theme.BORDER);
             ui.later(() -> {
-                ui.g.nextStratum();
-                ui.fill(ui.contentX - 5, ui.contentY - 3, ui.contentW + 10, ui.contentH + 8, Theme.PANEL);
-                ui.shield(ui.contentX - 5, ui.contentY - 3, ui.contentW + 10, ui.contentH + 8);
+                ui.cover(ui.contentX - 5, ui.contentY - 3, ui.contentW + 10, ui.contentH + 8);
                 draw(ui, ui.contentX, ui.contentY, ui.contentW, ui.contentH);
+                ui.uncover();
             });
             return;
         }
@@ -1018,7 +1017,6 @@ public final class Chart implements Interactive {
                 drawColor = index;
                 if (selected != null) {
                     selected.color = DRAW_COLORS[index];
-                    Drawings.save();
                 }
             });
             if (over) ui.fill(cx, by, 13, 13, Theme.HOVER);
@@ -1036,7 +1034,6 @@ public final class Chart implements Interactive {
             if (selected != null) drawings().remove(selected);
             else drawings().clear();
             selected = null;
-            Drawings.save();
         });
     }
 
@@ -1252,14 +1249,12 @@ public final class Chart implements Interactive {
                 if (hit != null) {
                     drawings().remove(hit);
                     if (selected == hit) selected = null;
-                    Drawings.save();
                 }
             }
             case HLINE -> {
                 Drawing line = start(Kind.HLINE, time, value);
                 drawings().add(line);
                 selected = line;
-                Drawings.save();
                 tool = Tool.CURSOR;
             }
             case PENCIL -> {
@@ -1358,9 +1353,6 @@ public final class Chart implements Interactive {
                 if (!moved && tool == Tool.CURSOR && hoveredLine >= 0 && onLineClick != null
                         && hoveredLine < lines.size()) onLineClick.accept(lines.get(hoveredLine));
             }
-            case MOVE, RESHAPE -> {
-                if (moved) Drawings.save();
-            }
             case BOX -> {
                 int left = Math.max(main.x, Math.min(pressX, px)), right = Math.min(main.x + main.w - 1,
                         Math.max(pressX, px));
@@ -1389,7 +1381,6 @@ public final class Chart implements Interactive {
                 if (real) {
                     drawings().add(done);
                     selected = done.kind == Kind.PENCIL ? null : done;
-                    Drawings.save();
                 }
                 if (tool != Tool.PENCIL) tool = Tool.CURSOR;
             }
@@ -1449,6 +1440,8 @@ public final class Chart implements Interactive {
      * whether the key was used.
      */
     public boolean key(int key) {
+        // While a chart is maximized the ones under it take no keys.
+        if (maximized != null && maximized != this) return false;
         if (key == InputConstants.KEY_ESCAPE && maximized == this) {
             maximized = null;
             return true;
@@ -1456,7 +1449,6 @@ public final class Chart implements Interactive {
         if ((key == InputConstants.KEY_DELETE || key == InputConstants.KEY_BACKSPACE) && selected != null) {
             drawings().remove(selected);
             selected = null;
-            Drawings.save();
             return true;
         }
         if (key == InputConstants.KEY_ESCAPE && (tool != Tool.CURSOR || draft != null || selected != null)) {

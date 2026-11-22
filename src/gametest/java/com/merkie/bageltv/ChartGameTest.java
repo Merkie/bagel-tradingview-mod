@@ -3,6 +3,7 @@ package com.merkie.bageltv;
 import com.merkie.bageltv.chart.Chart;
 import com.merkie.bageltv.chart.Drawings;
 import com.merkie.bageltv.ui.Route;
+import com.merkie.bageltv.view.EconomyView;
 import com.merkie.bageltv.view.ItemView;
 import net.fabricmc.fabric.api.client.gametest.v1.FabricClientGameTest;
 import net.fabricmc.fabric.api.client.gametest.v1.context.ClientGameTestContext;
@@ -15,7 +16,8 @@ import static com.merkie.bageltv.Harness.require;
 /**
  * The chart engine on an item's 2,000 candles: wheel zoom around the cursor, small trackpad steps, drag to pan,
  * box zoom three ways, stretching the value axis, double click and Reset to fit, log scale, chart types, and the
- * drawing tools, whose drawings stay on their candles and are saved per chart.
+ * drawing tools, whose drawings stay on their candles until the player leaves the page. A maximized chart keeps
+ * the mouse and the keys from the charts under it.
  */
 public final class ChartGameTest implements FabricClientGameTest {
     @Override
@@ -191,9 +193,6 @@ public final class ChartGameTest implements FabricClientGameTest {
                     "The pencil stroke keeps its points and the color picked for it");
             harness.park();
             harness.shot("chart-drawings");
-            String saved = Harness.read(Harness.CONFIG.resolve("bagel-tradingview-drawings.json"));
-            require(saved.contains("\"item:diamond\"") && saved.contains("TREND") && saved.contains("PENCIL"),
-                    "Drawings are saved under the chart's key: " + saved.length() + " characters");
 
             // Drawings are anchored to time and price, so zooming moves them with the candles.
             double anchor = chart.drawings().getFirst().t[0];
@@ -204,14 +203,13 @@ public final class ChartGameTest implements FabricClientGameTest {
             harness.shot("chart-drawings-zoomed");
             harness.click(context.computeOnClient(client -> chart.button("reset")));
 
-            // They come back after closing the terminal and reading the file again.
+            // They are still there after closing the terminal and opening it on the same page.
             harness.key(InputConstants.KEY_B);
             context.waitFor(client -> client.gui.screen() == null);
-            context.runOnClient(client -> Drawings.reload());
             harness.open();
             ItemView again = harness.view(ItemView.class);
             Chart reopened = context.computeOnClient(client -> again.chart());
-            require(context.computeOnClient(client -> reopened.drawings().size()) == 5, "Drawings persist");
+            require(context.computeOnClient(client -> reopened.drawings().size()) == 5, "Drawings stay while the page does");
 
             // Clicking a drawing selects it; dragging it moves it; dragging a handle reshapes it.
             int[] box = context.computeOnClient(client -> reopened.plot());
@@ -232,8 +230,6 @@ public final class ChartGameTest implements FabricClientGameTest {
             harness.drag(InputConstants.MOUSE_BUTTON_LEFT, mx + 90, my + 30, mx + 120, my + 40);
             require(reopened.selected().t[1] > corner && Math.abs(reopened.selected().t[0] - (corner - width)) < 1,
                     "Dragging a handle moves that corner only");
-            require(Harness.read(Harness.CONFIG.resolve("bagel-tradingview-drawings.json")).contains(
-                    Double.toString(reopened.selected().t[1])), "A moved drawing is saved where it was put");
             harness.key(InputConstants.KEY_ESCAPE);
 
             // Maximize fills the view's area with the same chart, tools and drawings; Escape puts it back.
@@ -267,8 +263,50 @@ public final class ChartGameTest implements FabricClientGameTest {
             harness.click(context.computeOnClient(client -> reopened.button(Chart.Tool.CURSOR)));
             pick(harness, context, reopened, "trash");
             require(context.computeOnClient(client -> reopened.drawings().isEmpty()), "Clear all removes the rest");
-            require(!Harness.read(Harness.CONFIG.resolve("bagel-tradingview-drawings.json")).contains("item:diamond"),
-                    "and the file forgets them");
+
+            // Going to another page and coming back removes what was drawn.
+            harness.key(InputConstants.KEY_ESCAPE);
+            draw(harness, context, reopened, Chart.Tool.TREND, mx - 100, my + 20, mx - 20, my - 20);
+            require(context.computeOnClient(client -> reopened.drawings().size()) == 1, "One line to leave behind");
+            harness.go(Route.of(Route.Kind.ECONOMY));
+            harness.go(Route.item("diamond"));
+            ItemView returned = harness.view(ItemView.class);
+            Chart back = context.computeOnClient(client -> returned.chart());
+            require(context.computeOnClient(client -> back.drawings().isEmpty() && back.selected() == null),
+                    "Leaving the page removes its drawings");
+
+            // A maximized chart keeps the mouse and the keys from the charts under it.
+            harness.go(Route.of(Route.Kind.ECONOMY));
+            EconomyView economy = harness.view(EconomyView.class);
+            Chart supply = context.computeOnClient(client -> economy.charts()[0]);
+            Chart online = context.computeOnClient(client -> economy.charts()[1]);
+            int[] upper = context.computeOnClient(client -> supply.plot());
+            int[] tile = {upper[0] + 30, upper[1] - Chart.HEADER - 18};
+            harness.move(tile);
+            require(context.computeOnClient(client -> Harness.screen(client).ui().tipped()),
+                    "The money supply tile has a tooltip");
+            pick(harness, context, supply, Chart.Tool.HLINE);
+            harness.click(upper[0] + upper[2] / 2, upper[1] + upper[3] / 2);
+            require(context.computeOnClient(client -> supply.selected()) != null, "A line drawn on the upper chart");
+            double[] below = view(context, supply);
+            harness.click(context.computeOnClient(client -> online.button("maximize")));
+            context.waitTicks(3);
+            require(online.maximized(), "The lower chart is maximized");
+            harness.move(tile);
+            context.waitTicks(2);
+            require(!context.computeOnClient(client -> Harness.screen(client).ui().tipped()),
+                    "Nothing under a maximized chart shows a tooltip");
+            for (int[] at : new int[][] {tile, context.computeOnClient(client -> online.button("reset")),
+                    {upper[0] + upper[2] / 2, upper[1] + upper[3] / 2}}) {
+                harness.scroll(at[0], at[1], 3);
+            }
+            require(Arrays.equals(below, view(context, supply))
+                    && !context.computeOnClient(client -> online.fitted()),
+                    "The wheel zooms the maximized chart and never the one under it");
+            harness.key(InputConstants.KEY_ESCAPE);
+            context.waitTicks(3);
+            require(!online.maximized() && context.computeOnClient(client -> supply.selected()) != null,
+                    "Escape restores the maximized chart and leaves the chart under it alone");
         });
     }
 
