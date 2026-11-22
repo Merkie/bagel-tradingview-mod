@@ -518,28 +518,73 @@ public final class TerminalScreen extends Screen implements Ui.Nav {
         return ui.focus == search && search.text.trim().length() >= 2;
     }
 
+    /** A search result and how well it matches: lower is better, see {@link #found}. */
+    private record Found(Route route, String name, int rank) {}
+
+    /** How well a name matches what was typed: 0 the whole name, 1 its start, 2 the start of a word in it, 3 elsewhere. */
+    static int match(String name, String typed) {
+        String plain = plain(name), q = plain(typed);
+        if (plain.equals(q)) return 0;
+        if (plain.startsWith(q)) return 1;
+        return plain.contains(" " + q) ? 2 : 3;
+    }
+
+    private static String plain(String text) {
+        return text.toLowerCase().replaceAll("[^a-z0-9]+", " ").trim();
+    }
+
+    /**
+     * Up to six items and five players, the best match first: a whole name, then a player on the server with you
+     * whose name starts with what was typed, then names that start with it (items before players), then items
+     * with a word that starts with it, then items that only contain it. Typing "tee" finds the player teedeedeedee
+     * before Flint and Steel.
+     */
+    private List<Found> found(String q, Models.ItemList items, Models.PlayerSearch players) {
+        List<Found> found = new ArrayList<>();
+        if (items != null && items.items != null) {
+            for (Models.ItemRow row : items.items) {
+                int match = Math.min(match(row.item, q), match(row.label(), q));
+                found.add(new Found(Route.item(row.item), row.label(), match == 0 ? 0 : match + 1));
+            }
+            // The API lists the most traded first, which stays the order among equal matches.
+            found.sort(java.util.Comparator.comparingInt(Found::rank));
+            if (found.size() > 6) found.subList(6, found.size()).clear();
+        }
+        int itemCount = found.size();
+        var connection = minecraft.getConnection();
+        if (connection != null) {
+            for (var info : connection.getOnlinePlayers()) {
+                String name = info.getProfile().name();
+                if (found.size() >= itemCount + 5) break;
+                // The player list also holds entries that are not players, such as a server's fake rows.
+                if (!name.matches("[A-Za-z0-9_.]{3,17}")) continue;
+                int match = match(name, q);
+                if (match <= 1) found.add(new Found(Route.player(name), name, match));
+            }
+        }
+        if (players != null && players.players != null) {
+            for (String name : players.players) {
+                if (found.size() >= itemCount + 5) break;
+                if (found.stream().anyMatch(other -> other.route().kind() == Route.Kind.PLAYER
+                        && other.name().equalsIgnoreCase(name))) continue;
+                found.add(new Found(Route.player(name), name, match(name, q) == 0 ? 0 : 2));
+            }
+        }
+        found.sort(java.util.Comparator.comparingInt(Found::rank));
+        return found;
+    }
+
     private void dropdown() {
         String q = search.text.trim();
-        Api.Query<Models.ItemList> items = Api.get("/v1/items?window=30d&sort=turnover&limit=6&q="
+        Api.Query<Models.ItemList> items = Api.get("/v1/items?window=30d&sort=turnover&limit=30&q="
                 + Api.encode(q.toLowerCase().replace(' ', '_')), Models.ItemList.class);
         Api.Query<Models.PlayerSearch> players = Api.get("/v1/players/search?q=" + Api.encode(q),
                 Models.PlayerSearch.class);
         results.clear();
         List<String> names = new ArrayList<>();
-        if (items.data != null && items.data.items != null) {
-            for (Models.ItemRow row : items.data.items) {
-                if (results.size() >= 6) break;
-                results.add(Route.item(row.item));
-                names.add(row.label());
-            }
-        }
-        int itemCount = results.size();
-        if (players.data != null && players.data.players != null) {
-            for (String name : players.data.players) {
-                if (results.size() >= itemCount + 5) break;
-                results.add(Route.player(name));
-                names.add(name);
-            }
+        for (Found found : found(q, items.data, players.data)) {
+            results.add(found.route());
+            names.add(found.name());
         }
         boolean waiting = items.data == null && items.error == null || players.data == null && players.error == null;
         boolean failed = items.data == null && players.data == null && items.error != null;
@@ -547,7 +592,7 @@ public final class TerminalScreen extends Screen implements Ui.Nav {
         boolean lookup = q.length() >= 3 && q.matches("[A-Za-z0-9_.]{3,17}")
                 && names.stream().noneMatch(name -> name.equalsIgnoreCase(q));
         int rows = results.size() + (lookup ? 1 : 0);
-        dropH = Math.max(1, rows) * 18 + 2 + (itemCount > 0 && results.size() > itemCount ? 1 : 0);
+        dropH = Math.max(1, rows) * 18 + 2;
         int x = dropX, y = dropY, w = dropW;
         ui.g.nextStratum();
         ui.fill(x + 3, y + 3, w, dropH, Theme.SHADOW);
@@ -562,10 +607,6 @@ public final class TerminalScreen extends Screen implements Ui.Nav {
         }
         for (int i = 0; i < results.size(); i++, ry += 18) {
             Route result = results.get(i);
-            if (i == itemCount && itemCount > 0) {
-                ui.hline(x + 1, ry, w - 2, Theme.BORDER);
-                ry += 1;
-            }
             boolean over = ui.click(x + 1, ry, w - 2, 18, () -> go(result));
             if (over || i == 0) ui.fill(x + 1, ry, w - 2, 18, over ? Theme.HOVER : Theme.SELECTED);
             if (result.kind() == Route.Kind.ITEM) ui.item(result.arg(), x + 3, ry + 1);
@@ -577,7 +618,8 @@ public final class TerminalScreen extends Screen implements Ui.Nav {
             boolean over = ui.click(x + 1, ry, w - 2, 18, () -> go(Route.player(q)));
             if (over || results.isEmpty()) ui.fill(x + 1, ry, w - 2, 18, over ? Theme.HOVER : Theme.SELECTED);
             ui.icon(Icon.SEARCH, x + 8, ry + 6, Theme.MUTED);
-            ui.text(ui.fit("Look up player " + q, w - 30), x + 24, ry + 5, Theme.TEXT);
+            ui.text(ui.fit("Look up " + q, w - 30), x + 24, ry + 5, Theme.TEXT);
+            ui.mark("lookup", x + w / 2, ry + 9);
         }
     }
 
