@@ -12,6 +12,11 @@ public final class EconomyView extends View {
     private final Board online = new Board.Economy("online");
     private final Board escrow = new Board.Economy("escrow");
 
+    /** The three charts, for tests. */
+    public com.merkie.bageltv.chart.Chart[] charts() {
+        return new com.merkie.bageltv.chart.Chart[] {supply.chart, online.chart, escrow.chart};
+    }
+
     @Override
     public boolean key(int key) {
         return supply.chart.key(key) || online.chart.key(key) || escrow.chart.key(key);

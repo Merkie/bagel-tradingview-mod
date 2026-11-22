@@ -101,6 +101,7 @@ public final class TerminalScreen extends Screen implements Ui.Nav {
         FORWARD.clear();
         RECENT.clear();
         VIEWS.clear();
+        com.merkie.bageltv.chart.Drawings.clear();
     }
 
     /** Makes the next open count as the first after a login, for tests. */
@@ -207,6 +208,8 @@ public final class TerminalScreen extends Screen implements Ui.Nav {
     private void show(Route next) {
         route = next;
         com.merkie.bageltv.chart.Chart.restore();
+        // Drawings last only while the player stays on the page.
+        com.merkie.bageltv.chart.Drawings.clear();
         if (next.kind() == Route.Kind.ITEM || next.kind() == Route.Kind.PLAYER) {
             RECENT.remove(next);
             RECENT.addFirst(next);
@@ -286,7 +289,8 @@ public final class TerminalScreen extends Screen implements Ui.Nav {
 
         ui.intro = intro;
         boolean searching = dropdownOpen();
-        ui.block(intro != null || settings || ui.overPopup() || searching && ui.hover(dropX, dropY, dropW, dropH));
+        ui.modal = intro != null || settings || searching && ui.hover(dropX, dropY, dropW, dropH);
+        ui.block(ui.modal || ui.overPopup());
         // During the startup animation the panel is drawn unseen, so its data loads, then opens from the logo.
         int[] window = intro == null ? null : intro.window(panelX, panelY, panelW, panelH, panelX + 37, panelY + 4);
         if (intro != null) intro.backdrop(ui, panelX + panelW / 2, panelY + panelH / 2);
@@ -701,7 +705,9 @@ public final class TerminalScreen extends Screen implements Ui.Nav {
         if (settings || dropdownOpen() && inDropdown(px, py)) return true;
         for (int i = ui.hits.size() - 1; i >= 0; i--) {
             Ui.Hit hit = ui.hits.get(i);
-            if (hit.contains(px, py) && hit.target != null && hit.target.scroll(px, py, scrollX, scrollY)) return true;
+            if (!hit.contains(px, py)) continue;
+            if (hit.target != null && hit.target.scroll(px, py, scrollX, scrollY)) return true;
+            if (hit.opaque) break;
         }
         return true;
     }

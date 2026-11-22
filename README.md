@@ -58,7 +58,7 @@ The screenshots come from the mod's tests, which run against a made-up market.
 
 Every chart works the same way: wheel to zoom, drag to pan, Shift-drag or right-drag to zoom to a box, drag the
 price axis to stretch it, double click to fit, log scale, maximize, and drawing tools behind the pencil. Drawings
-are saved per chart.
+last until you leave the page.
 
 It shows only what the data supports: an item with too few trades draws each sale as a dot, a window longer than
 the recorded history says how much it really covers, and counts that are only a minimum carry a mark.

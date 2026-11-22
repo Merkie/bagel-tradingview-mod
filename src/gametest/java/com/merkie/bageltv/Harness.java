@@ -1,6 +1,5 @@
 package com.merkie.bageltv;
 
-import com.merkie.bageltv.chart.Drawings;
 import com.merkie.bageltv.data.Api;
 import com.merkie.bageltv.ui.Route;
 import com.merkie.bageltv.ui.TerminalScreen;
@@ -27,7 +26,7 @@ final class Harness {
         this.context = context;
     }
 
-    /** Runs a test in a new world with default settings, no saved drawings and the busy fake market. */
+    /** Runs a test in a new world with default settings, no drawings and the busy fake market. */
     static void run(ClientGameTestContext context, String name, FailableConsumer<Harness, Exception> test) {
         FakeApi.mode = FakeApi.Mode.DENSE;
         FakeApi.delay = 0;
@@ -39,8 +38,6 @@ final class Harness {
                 Config fresh = new Config();
                 Config current = BagelTV.config();
                 for (var field : Config.class.getFields()) field.set(current, field.get(fresh));
-                Files.deleteIfExists(CONFIG.resolve("bagel-tradingview-drawings.json"));
-                Drawings.reload();
                 TerminalScreen.reset();
                 Api.clear();
             });
