@@ -38,9 +38,14 @@ public final class Ui {
     TextField focus;
     /** Drawn after everything else this frame, in order: popovers, menus, a maximized chart. */
     private final List<Runnable> later = new ArrayList<>();
-    /** Where this frame's popovers are, which hides the mouse from what is under them next frame. */
+    /**
+     * Where this frame's popovers and covers are (x, y, width, height, 1 for a cover), which hides the mouse
+     * from what is under them next frame.
+     */
     private final List<int[]> popups = new ArrayList<>();
     private final List<int[]> lastPopups = new ArrayList<>();
+    /** Whether something the screen draws last, such as its settings, has the mouse this frame. */
+    boolean modal;
     /** The open dropdown or popover, by the object that owns it, or null. */
     public Object openMenu;
     /** The view's box inside the panel, which a maximized chart fills. */
@@ -61,6 +66,8 @@ public final class Ui {
         int x, y, w, h;
         Runnable click;
         Interactive target;
+        /** Stops the wheel as well as clicks. */
+        boolean opaque;
         TextField field;
 
         boolean contains(int px, int py) {
@@ -126,9 +133,14 @@ public final class Ui {
         g.pose().popMatrix();
     }
 
-    /** Whether the mouse is over a popover drawn last frame. */
+    /** Whether the mouse is over a popover or a cover drawn last frame. */
     boolean overPopup() {
+        return overPopup(true);
+    }
+
+    private boolean overPopup(boolean covers) {
         for (int[] box : lastPopups) {
+            if (!covers && box[4] == 1) continue;
             if (realMx >= box[0] && realMx < box[0] + box[2] && realMy >= box[1] && realMy < box[1] + box[3]) {
                 return true;
             }
@@ -155,7 +167,24 @@ public final class Ui {
         if (shadow) fill(x + 3, y + 3, w, h, Theme.SHADOW);
         box(x, y, w, h, Theme.RAISED, Theme.BORDER_STRONG);
         shield(x, y, w, h);
-        popups.add(new int[] {x, y, w, h});
+        popups.add(new int[] {x, y, w, h, 0});
+    }
+
+    /**
+     * Starts a layer that fills a box over the view, such as a maximized chart. It swallows clicks and the wheel
+     * and hides the mouse from the view under it on the next frame; a popover over it hides the mouse from it in
+     * turn. Call from {@link #later}, draw the layer, then call {@link #uncover}.
+     */
+    public void cover(int x, int y, int w, int h) {
+        g.nextStratum();
+        fill(x, y, w, h, Theme.PANEL);
+        shield(x, y, w, h);
+        popups.add(new int[] {x, y, w, h, 1});
+        block(modal || overPopup(false));
+    }
+
+    public void uncover() {
+        block(false);
     }
 
     /** Covers the screen with a region that runs an action on a click, under a popover drawn next. */
@@ -403,9 +432,11 @@ public final class Ui {
         hit(x, y, w, h).target = target;
     }
 
-    /** Swallows clicks in a region so nothing under it gets them. */
+    /** Swallows clicks and the wheel in a region so nothing under it gets them. */
     public void shield(int x, int y, int w, int h) {
-        hit(x, y, w, h).click = () -> {};
+        Hit hit = hit(x, y, w, h);
+        hit.click = () -> {};
+        hit.opaque = true;
     }
 
     public void cursor(CursorType type) {
@@ -423,6 +454,11 @@ public final class Ui {
     public void tip(List<String> lines) {
         tip.clear();
         tip.addAll(lines);
+    }
+
+    /** Whether the last frame showed a tooltip, for tests. */
+    public boolean tipped() {
+        return !tip.isEmpty();
     }
 
     void end() {
