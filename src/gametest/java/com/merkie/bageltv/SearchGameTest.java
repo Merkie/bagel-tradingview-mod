@@ -8,7 +8,10 @@ import com.mojang.blaze3d.platform.InputConstants;
 
 import static com.merkie.bageltv.Harness.require;
 
-/** Global search finds items and players, Enter opens the first, and back, forward and Recent retrace the way. */
+/**
+ * Global search finds items and players, the best match first; Enter opens the first, back, forward and Recent
+ * retrace the way, and looking up a name nobody has says so.
+ */
 public final class SearchGameTest implements FabricClientGameTest {
     @Override
     public void runTest(ClientGameTestContext context) {
@@ -64,6 +67,36 @@ public final class SearchGameTest implements FabricClientGameTest {
             context.waitFor(client -> client.gui.screen() == null);
             harness.open();
             require(TerminalScreen.route().equals(Route.player("Simpinhoe")), "Reopening returns to the same view");
+
+            // The best match leads: a player whose name starts with what was typed comes before an item that only
+            // contains it, and someone on the server with you before every other name.
+            harness.go(Route.of(Route.Kind.MARKET));
+            harness.key(InputConstants.KEY_SLASH);
+            harness.type("/sim");
+            harness.settle();
+            harness.key(InputConstants.KEY_RETURN);
+            harness.settle();
+            require(TerminalScreen.route().equals(Route.player("Simpinhoe")), "Enter opens the player a name starts: "
+                    + TerminalScreen.route());
+            String me = context.computeOnClient(client -> client.getUser().getName());
+            harness.key(InputConstants.KEY_SLASH);
+            harness.type("/" + me.substring(0, 3));
+            harness.settle();
+            harness.shot("search-online");
+            harness.key(InputConstants.KEY_RETURN);
+            harness.settle();
+            require(TerminalScreen.route().equals(Route.player(me)), "A player in the game's list leads the results: "
+                    + TerminalScreen.route());
+
+            // Looking up a name nobody has says so, whatever closest name Bagel answers with.
+            harness.key(InputConstants.KEY_SLASH);
+            harness.type("/Simp");
+            harness.settle();
+            harness.click(harness.mark("lookup"));
+            harness.settle();
+            require(TerminalScreen.route().equals(Route.player("Simp")), "Look up opens the name as typed");
+            harness.mark("player:none");
+            harness.shot("search-no-player");
         });
     }
 }

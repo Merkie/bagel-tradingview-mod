@@ -1058,6 +1058,8 @@ public final class FakeApi implements ClientModInitializer {
 
     private static JsonObject player(String name, boolean dense) {
         if (name.equalsIgnoreCase("nobody_here")) return null;
+        // Like Bagel, a name nobody has is answered with the closest one.
+        if (name.equalsIgnoreCase("Simp")) name = "Simpinhoe";
         JsonObject player = fixture("player_simpinhoe");
         long now = now();
         long shift = now - capturedAt();

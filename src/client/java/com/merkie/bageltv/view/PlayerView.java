@@ -83,6 +83,11 @@ public final class PlayerView extends View {
                 x + 6, Ui.textY(y, h), w - 10)).left().drop(1);
     }
 
+    /** Whether two names are one player's: case aside, and with or without a Bedrock name's leading dot. */
+    private static boolean sameName(String a, String b) {
+        return (a.startsWith(".") ? a.substring(1) : a).equalsIgnoreCase(b.startsWith(".") ? b.substring(1) : b);
+    }
+
     private boolean sold(Trade trade) {
         return trade.side != null ? trade.side.startsWith("s") : name.equalsIgnoreCase(trade.seller);
     }
@@ -100,9 +105,17 @@ public final class PlayerView extends View {
     public void render(Ui ui, int x, int y, int w, int h) {
         Api.Query<Models.Player> query = Api.get("/v1/players/" + Api.encode(name), Models.Player.class);
         Models.Player player = query.data;
-        header(ui, player, x, y, w);
+        // Bagel answers a name it does not have with the closest one it does: "tee" comes back as Teeajj.
+        boolean other = player != null && player.name != null && !sameName(player.name, name);
+        header(ui, other ? null : player, x, y, w);
         int top = y + 38;
         if (!ui.ready(query, x, top, w, y + h - top)) return;
+        if (other) {
+            ui.textCenter(ui.fit("Bagel has no player \"" + name + "\"", w - 8), x + w / 2, top + (y + h - top) / 2 - 4,
+                    Theme.MUTED);
+            ui.mark("player:none", x + w / 2, top + (y + h - top) / 2);
+            return;
+        }
 
         var config = BagelTV.config();
         int sideMax = w - 240 - Parts.GAP;
