@@ -12,6 +12,8 @@ public final class BagelTV implements ClientModInitializer {
     public static final String NAME = "BagelTradingView";
     public static final String VERSION = FabricLoader.getInstance().getModContainer(ID)
             .map(mod -> mod.getMetadata().getVersion().getFriendlyString()).orElse("dev");
+    /** False on the website (`web/`), which is the terminal and nothing else: always open, always the whole page. */
+    public static final boolean IN_GAME = true;
     private static Config config;
 
     @Override

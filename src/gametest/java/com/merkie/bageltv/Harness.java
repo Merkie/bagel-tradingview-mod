@@ -28,6 +28,8 @@ final class Harness {
 
     /** Runs a test in a new world with default settings, no drawings and the busy fake market. */
     static void run(ClientGameTestContext context, String name, FailableConsumer<Harness, Exception> test) {
+        // A run that only wants the item icons (see IconSheetGameTest) skips the tests.
+        if (System.getenv("BAGELTV_ICONS") != null) return;
         FakeApi.mode = FakeApi.Mode.DENSE;
         FakeApi.delay = 0;
         FakeApi.clearRequests();

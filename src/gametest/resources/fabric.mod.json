@@ -15,7 +15,8 @@
       "com.merkie.bageltv.DataGameTest",
       "com.merkie.bageltv.TerminalGameTest",
       "com.merkie.bageltv.BillfordGameTest",
-      "com.merkie.bageltv.IntroGameTest"
+      "com.merkie.bageltv.IntroGameTest",
+      "com.merkie.bageltv.IconSheetGameTest"
     ]
   },
   "mixins": ["bagel-tradingview.test.mixins.json"]

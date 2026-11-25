@@ -348,7 +348,7 @@ public final class TerminalScreen extends Screen implements Ui.Nav {
         @Override
         public boolean mouseDown(int px, int py, int button, boolean shift, boolean doubleClick) {
             if (button != GLFW.GLFW_MOUSE_BUTTON_LEFT) return false;
-            if (doubleClick) {
+            if (doubleClick && BagelTV.IN_GAME) {
                 toggleFullscreen();
                 return true;
             }
@@ -388,12 +388,14 @@ public final class TerminalScreen extends Screen implements Ui.Nav {
         int tx = x + 50 + ui.text(BagelTV.NAME, x + 50, y + 5, Theme.TEXT);
 
         int right = x + w - 1;
-        right -= 15;
-        ui.iconButton(Icon.CLOSE, right, by, 15, 15, false, true, "Close", this::onClose);
-        right -= 15;
-        boolean full = BagelTV.config().fullscreen;
-        ui.iconButton(full ? Icon.RESTORE : Icon.MAXIMIZE, right, by, 15, 15, false, true,
-                full ? "Window" : "Fullscreen", this::toggleFullscreen);
+        if (BagelTV.IN_GAME) {
+            right -= 15;
+            ui.iconButton(Icon.CLOSE, right, by, 15, 15, false, true, "Close", this::onClose);
+            right -= 15;
+            boolean full = BagelTV.config().fullscreen;
+            ui.iconButton(full ? Icon.RESTORE : Icon.MAXIMIZE, right, by, 15, 15, false, true,
+                    full ? "Window" : "Fullscreen", this::toggleFullscreen);
+        }
         right -= 15;
         int gearX = right;
         ui.iconButton(Icon.GEAR, right, by, 15, 15, settings, true, "Settings", () -> {
@@ -628,7 +630,8 @@ public final class TerminalScreen extends Screen implements Ui.Nav {
     private static final String[] SCALES = {"Auto", "1", "2", "3", "4", "5"};
 
     private void settingsPopover() {
-        int w = 168, h = 62;
+        // The website has no key to set: it is always open.
+        int w = 168, h = BagelTV.IN_GAME ? 62 : 44;
         int x = Math.min(gearX + 15 - w, ui.width - w - 2), y = panelY + TITLE;
         ui.g.nextStratum();
         // A click anywhere else closes it.
@@ -640,20 +643,23 @@ public final class TerminalScreen extends Screen implements Ui.Nav {
         ui.fill(x + 3, y + 3, w, h, Theme.SHADOW);
         ui.box(x, y, w, h, Theme.RAISED, Theme.BORDER_STRONG);
         ui.shield(x, y, w, h);
-        ui.text("Hotkey", x + 7, y + 10, Theme.MUTED);
-        String key = capturingKey ? "Press a key" : Hotkey.name();
-        int kw = ui.width(key) + 10;
-        ui.button(key, x + w - 7 - kw, y + 7, capturingKey, () -> {
-            capturingKey = !capturingKey;
-            keyNote = "";
-        });
-        ui.text("Size", x + 7, y + 28, Theme.MUTED);
+        if (BagelTV.IN_GAME) {
+            ui.text("Hotkey", x + 7, y + 10, Theme.MUTED);
+            String key = capturingKey ? "Press a key" : Hotkey.name();
+            int kw = ui.width(key) + 10;
+            ui.button(key, x + w - 7 - kw, y + 7, capturingKey, () -> {
+                capturingKey = !capturingKey;
+                keyNote = "";
+            });
+            y += 18;
+        }
+        ui.text("Size", x + 7, y + 10, Theme.MUTED);
         int sw = ui.segmentsWidth(SCALES);
-        ui.segments(x + w - 7 - sw, y + 25, SCALES, Math.min(BagelTV.config().scale, SCALES.length - 1), picked -> {
+        ui.segments(x + w - 7 - sw, y + 7, SCALES, Math.min(BagelTV.config().scale, SCALES.length - 1), picked -> {
             BagelTV.config().scale = picked;
             BagelTV.config().save();
         });
-        ui.text(ui.fit(keyNote.isEmpty() ? BagelTV.NAME + " " + BagelTV.VERSION : keyNote, w - 14), x + 7, y + 46,
+        ui.text(ui.fit(keyNote.isEmpty() ? BagelTV.NAME + " " + BagelTV.VERSION : keyNote, w - 14), x + 7, y + 28,
                 keyNote.isEmpty() ? Theme.FAINT : Theme.WARN);
     }
 
@@ -783,7 +789,7 @@ public final class TerminalScreen extends Screen implements Ui.Nav {
             return true;
         }
         if (current().key(key)) return true;
-        if (key == BagelTV.config().hotkey) {
+        if (key == BagelTV.config().hotkey && BagelTV.IN_GAME) {
             onClose();
             return true;
         }
@@ -825,6 +831,7 @@ public final class TerminalScreen extends Screen implements Ui.Nav {
 
     @Override
     public void onClose() {
+        if (!BagelTV.IN_GAME) return;
         minecraft.gui.setScreen(parent);
     }
 

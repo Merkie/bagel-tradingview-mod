@@ -246,6 +246,8 @@ public final class Models {
         public double qty;
         /** Per unit, when the trade was last seen. */
         public Double worth, ah;
+        /** A crate key: it comes from or goes to the player's key balance, is not an item, and has no price. */
+        public boolean key;
 
         public String label() {
             return compact(name != null ? name : item);
