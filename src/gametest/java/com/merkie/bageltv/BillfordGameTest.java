@@ -37,6 +37,18 @@ public final class BillfordGameTest implements FabricClientGameTest {
             require(TerminalScreen.route().equals(Route.item("diamond")), "A row opens the item he gives: "
                     + TerminalScreen.route());
 
+            // The ninth trade is 75 Common Keys for a Gold Key: keys are a balance, so the row opens no item
+            harness.go(Route.of(Route.Kind.BILLFORD));
+            harness.settle();
+            BillfordView again = harness.view(BillfordView.class);
+            int[] keys = context.computeOnClient(client -> again.table().row(8));
+            harness.move(keys[0], keys[1]);
+            harness.shot("billford-keys-hover");
+            harness.click(keys);
+            harness.settle();
+            require(TerminalScreen.route().kind() == Route.Kind.BILLFORD, "A trade in crate keys opens no item: "
+                    + TerminalScreen.route());
+
             FakeApi.mode = FakeApi.Mode.SPARSE;
             harness.context().runOnClient(client -> com.merkie.bageltv.data.Api.clear());
             harness.go(Route.of(Route.Kind.BILLFORD));

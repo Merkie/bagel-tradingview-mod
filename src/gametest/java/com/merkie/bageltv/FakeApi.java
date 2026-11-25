@@ -868,7 +868,7 @@ public final class FakeApi implements ClientModInitializer {
 
     // Billford
 
-    /** Each trade as "qty item worth ah" on both sides of ">", with "+" between items and "-" for no price. */
+    /** Each trade as "qty item worth ah" on both sides of ">", with "+" between items and "-" for no price. The last is in crate keys. */
     private static final String[] BILLFORD = {
         "1 oak_log 1600 23829 > 1 redstone 5000 22874",
         "16 cobblestone 100 310 > 1 diamond 20000 41250",
@@ -878,6 +878,7 @@ public final class FakeApi implements ClientModInitializer {
         "1 gold_ingot 6000 14100 > 3 coal 800 4700",
         "64 obsidian 2000 9900 > 1 quartz 1500 6000",
         "2 slime_ball 2500 12000 > 5 lapis_lazuli 1800 5300",
+        "75 tripwire_hook[named=common_key] - - > 1 tripwire_hook[named=gold_key] - -",
     };
 
     /** In the busy market, three weeks of trades of 12 to 24 hours each; otherwise the one he offers now. */
@@ -902,7 +903,11 @@ public final class FakeApi implements ClientModInitializer {
                     String base = part[1].split("\\[")[0];
                     item.addProperty("item", part[1]);
                     item.addProperty("base", base);
-                    item.addProperty("name", part[1].equals(base) ? title(base) : "Enchanted Book (Mending 1)");
+                    boolean key = part[1].endsWith("_key]");
+                    item.addProperty("key", key);
+                    item.addProperty("name", part[1].equals(base) ? title(base) : key
+                            ? title(part[1].substring(part[1].indexOf('=') + 1, part[1].length() - 1))
+                            : "Enchanted Book (Mending 1)");
                     double qty = Double.parseDouble(part[0]);
                     item.addProperty("qty", qty);
                     for (int p = 0; p < 2; p++) {

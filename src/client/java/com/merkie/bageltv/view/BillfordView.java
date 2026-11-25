@@ -16,7 +16,8 @@ import java.util.List;
 /**
  * Billford, the trader behind /billford: the trade he offers now and every trade he has offered, newest first. Each
  * is rated twice, by what the two sides are worth to /sell and by what they sell for on the auction house, at the
- * prices of the trade's own time. The two can disagree, so neither is folded into the other.
+ * prices of the trade's own time. The two can disagree, so neither is folded into the other. A trade in crate keys
+ * moves the player's key balance; a key is not an item, so it has no price, no item page and no rating.
  */
 public final class BillfordView extends View {
     private static final int NOW = 62;
@@ -76,7 +77,7 @@ public final class BillfordView extends View {
             if (i > 0) cx += ui.text("+", cx, y + 6, Theme.FAINT) + 5;
             String label = ui.fit(Fmt.count(item.qty) + " " + item.label(), Math.max(20, x + room - cx - 20));
             int width = 20 + ui.width(label);
-            boolean over = links && ui.click(cx, y, width, 18, () -> ui.nav.item(item.item));
+            boolean over = links && !item.key && ui.click(cx, y, width, 18, () -> ui.nav.item(item.item));
             ui.item(item.item, cx, y + 1);
             ui.text(label, cx + 20, y + 6, over ? Theme.ACCENT : Theme.TEXT);
             if (over) ui.hline(cx + 20, y + 14, width - 21, Theme.ACCENT);
@@ -102,6 +103,7 @@ public final class BillfordView extends View {
 
     /** An item's two prices each, as they were when its trade was last seen. */
     private static String prices(BillfordItem item) {
+        if (item.key) return "key balance, no price";
         return "worth " + (item.worth == null ? "-" : Fmt.moneyExact(item.worth)) + ", AH sales "
                 + (item.ah == null ? "-" : Fmt.moneyExact(item.ah));
     }
@@ -122,7 +124,9 @@ public final class BillfordView extends View {
             top += NOW + Parts.GAP;
         }
         table.render(ui, x, top, w, y + h - top, trades, null, false, null,
-                row -> ui.nav.item(row.get.getFirst().item), BillfordView::tip);
+                row -> {
+                    if (!row.get.getFirst().key) ui.nav.item(row.get.getFirst().item);
+                }, BillfordView::tip);
     }
 
     /** The trade he offers now: both sides, how each kind of price rates it, and the verdict. */
